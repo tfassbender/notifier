@@ -1,0 +1,9 @@
+version: '2'
+services:
+  jfg_notifier:
+    build: .
+    ports:
+      - "${TOMCAT_EXTERNAL_PORT}:8080"
+      - "${NOTIFIER_PORT}:${NOTIFIER_PORT}"
+    volumes:
+      - ./logs:/usr/local/tomcat/log
