@@ -15,8 +15,10 @@ public class SubscriberManager {
 	
 	private List<Subscriber> subscribers;
 	
-	public SubscriberManager() {
+	public SubscriberManager() throws IOException {
 		subscribers = new ArrayList<Subscriber>();
+		
+		//the receiver is just created with a reference and not saved as reference
 		new SubscriberReceiver(this);
 	}
 	
