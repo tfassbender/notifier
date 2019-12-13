@@ -5,6 +5,10 @@ import java.util.List;
 
 public class Notification {
 	
+	private String message;
+	private String sender;
+	private List<String> receivers;
+	
 	public Notification() {
 		//default constructor for serialization
 	}
@@ -14,9 +18,10 @@ public class Notification {
 		this.receivers = Arrays.asList(receivers);
 	}
 	
-	private String message;
-	private String sender;
-	private List<String> receivers;
+	@Override
+	public String toString() {
+		return "Notification [message=" + message + ", sender=" + sender + ", receivers=" + receivers + "]";
+	}
 	
 	public String getMessage() {
 		return message;

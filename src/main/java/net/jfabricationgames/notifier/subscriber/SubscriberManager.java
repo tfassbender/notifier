@@ -20,12 +20,48 @@ public class SubscriberManager {
 		
 		//the receiver is just created with a reference and not saved as reference
 		new SubscriberReceiver(this);
+		
+		LOGGER.info(">> SubscriberManager started");
+	}
+	
+	@Override
+	public String toString() {
+		return "SubscriberManager [subscribers=" + subscribers + "]";
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((subscribers == null) ? 0 : subscribers.hashCode());
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SubscriberManager other = (SubscriberManager) obj;
+		if (subscribers == null) {
+			if (other.subscribers != null)
+				return false;
+		}
+		else if (!subscribers.equals(other.subscribers))
+			return false;
+		return true;
 	}
 	
 	public void sendNotification(Notification notification) {
-		LOGGER.debug("sending notification: " + notification);
+		LOGGER.debug("sending notification: {}", notification);
+		
+		//copy the list of subscribers to prevent concurrent modifications
+		List<Subscriber> currentSubscribers = new ArrayList<Subscriber>(subscribers);
 		//send the notification message to all subscribers
-		subscribers.stream().filter(s -> notification.getReceivers().contains(s.getName()))
+		currentSubscribers.stream().filter(s -> notification.getReceivers().contains(s.getName()))
 				.forEach(s -> sendNotificationToSubscriber(s, notification));
 	}
 	

@@ -26,16 +26,19 @@ public class NotifierService {
 	/**
 	 * The subscriber manager that handles all subscribers and passes on the notifications
 	 */
-	private SubscriberManager manager;
+	private static SubscriberManager manager;
 	
 	public NotifierService() {
-		try {
-			manager = new SubscriberManager();
-		}
-		catch (IOException ioe) {
-			LOGGER.fatal("the subscriber manager couldn't be initialized (ending program)", ioe);
-			//end the program because without a subscriber manager there is nothing to do
-			System.exit(1);
+		//don't start another SubscriberManager if there is already one running (services can be started multiple times)
+		if (manager == null) {
+			try {
+				manager = new SubscriberManager();
+			}
+			catch (IOException ioe) {
+				LOGGER.fatal("the subscriber manager couldn't be initialized (ending program)", ioe);
+				//end the program because without a subscriber manager there is nothing to do
+				System.exit(1);
+			}			
 		}
 	}
 	
@@ -44,7 +47,6 @@ public class NotifierService {
 	 */
 	@GET
 	@Path("/hello")
-	@Produces(MediaType.APPLICATION_JSON)
 	public Response processHelloRequestGet() {
 		LOGGER.info("Received 'hello' request (HTTP GET)");
 		String answer = "Hello there!";
@@ -69,17 +71,17 @@ public class NotifierService {
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
-
+	
 	/**
 	 * Send a notification to registered listeners (using HTTP GET)
 	 */
 	@GET
-	@Path("/notify/{to_user}/{message}")
+	@Path("/notify/{from_user}/{to_user}/{message}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response notifySubscribersHttpGet(@PathParam("to_user") String user, @PathParam("message") String message) {
-		LOGGER.info("Received notification via HTTP GET request: [user: {} message: {}]", user, message);
+	public Response notifySubscribersHttpGet(@PathParam("from_user") String sender, @PathParam("to_user") String user, @PathParam("message") String message) {
+		LOGGER.info("Received notification via HTTP GET request: [from_user: {} to_user: {} message: {}]", sender, user, message);
 		try {
-			Notification notification = new Notification(message, "", user);
+			Notification notification = new Notification(message, sender, user);
 			manager.sendNotification(notification);
 			return Response.status(Status.OK).build();
 		}

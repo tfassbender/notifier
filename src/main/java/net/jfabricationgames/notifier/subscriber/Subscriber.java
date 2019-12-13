@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Scanner;
+import java.net.SocketException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +33,47 @@ public class Subscriber {
 		
 		//send a name request and receive result (afterwards register this subscriber to the manager)
 		sendNameRequest();
+		
+		LOGGER.info(">> Subscriber started {}", this);
+	}
+	
+	@Override
+	public String toString() {
+		return "Subscriber [receiver=" + receiver + ", name=" + name + ", socket=" + socket + ", inStream=" + inStream + ", outStream=" + outStream
+				+ "]";
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((receiver == null) ? 0 : receiver.hashCode());
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Subscriber other = (Subscriber) obj;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		}
+		else if (!name.equals(other.name))
+			return false;
+		if (receiver == null) {
+			if (other.receiver != null)
+				return false;
+		}
+		else if (!receiver.equals(other.receiver))
+			return false;
+		return true;
 	}
 	
 	/**
@@ -45,14 +86,16 @@ public class Subscriber {
 		sendMessageToSubscriber(USERNAME_REQUEST);
 		
 		Thread usernameRequestListenerThread = new Thread(() -> {
-			Scanner scanner = new Scanner(inStream);
 			while (!Thread.currentThread().isInterrupted()) {
 				try {
 					Thread.sleep(10);
 					//wait for the subscriber to enter a username
-					if (scanner.hasNext()) {
+					int available;
+					if ((available = inStream.available()) > 0) {
 						LOGGER.debug("reading scanner input");
-						String username = scanner.next();
+						byte[] buffer = new byte[available];
+						inStream.read(buffer);
+						String username = new String(buffer);
 						LOGGER.debug("subscriber registered with username: {}", username);
 						//set the username to the subscriber
 						Subscriber.this.name = username;
@@ -65,8 +108,10 @@ public class Subscriber {
 					//reset interrupted flag
 					Thread.currentThread().interrupt();
 				}
+				catch (IOException ioe) {
+					LOGGER.error("error while trying to read from input stream", ioe);
+				}
 			}
-			scanner.close();
 			
 			//register the subscriber to the receiver (which registers it to the manager)
 			receiver.registerSubscriber(Subscriber.this);
@@ -84,12 +129,32 @@ public class Subscriber {
 	 * @throws IOException
 	 */
 	public void sendMessageToSubscriber(String message) throws IOException {
-		LOGGER.debug("sending message to subscriber (subscriber: {}; message: {}{})", this, message, MESSAGE_END);
-		//send the message
-		outStream.write(message.getBytes());
-		//add the notification end tag
-		outStream.write(MESSAGE_END.getBytes());
-		outStream.flush();
+		boolean connected = isConnected();
+		boolean removeSubscriber = false;
+		LOGGER.debug("sending message to subscriber (message: {}{}   subscriber: {}   connected: {})", message, MESSAGE_END, this, connected);
+		
+		if (connected) {
+			try {
+				//send the message
+				outStream.write(message.getBytes());
+				//add the notification end tag
+				outStream.write(MESSAGE_END.getBytes());
+				outStream.flush();
+			}
+			catch (SocketException se) {
+				LOGGER.warn("SocketException caught: {}\nthe subscriber seems to be disconnected. notification is not send", se.getMessage());
+				removeSubscriber = true;
+			}
+		}
+		else {
+			LOGGER.warn("the subscriber disconnected. notification is not send");
+			removeSubscriber = true;
+		}
+		
+		if (removeSubscriber) {
+			LOGGER.info("removing subscriber: {}", this);
+			receiver.removeSubscriber(this);
+		}
 	}
 	
 	public boolean isConnected() {

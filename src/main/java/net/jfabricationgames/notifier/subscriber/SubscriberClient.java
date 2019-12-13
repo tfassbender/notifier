@@ -7,10 +7,15 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * A simple implementation of a client side subscriber that subscribes to the service and listens to notifications.
  */
 public class SubscriberClient {
+	
+	private static final Logger LOGGER = LogManager.getLogger(SubscriberClient.class);
 	
 	/**
 	 * The string that the service will send to request a name from the user.
@@ -64,8 +69,52 @@ public class SubscriberClient {
 	 */
 	public SubscriberClient() throws IOException {
 		loadConfig();
+		LOGGER.info("SubscriberClient: loaded configuration: [host: {}   port: {}   username: {}]", host, port, username);
+		
 		subscribeToNotifierService();
 		startNotificationListener();
+	}
+	
+	@Override
+	public String toString() {
+		return "SubscriberClient [host=" + host + ", port=" + port + ", username=" + username + ", socket=" + socket + ", inStream=" + inStream
+				+ ", outStream=" + outStream + "]";
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((host == null) ? 0 : host.hashCode());
+		result = prime * result + port;
+		result = prime * result + ((username == null) ? 0 : username.hashCode());
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SubscriberClient other = (SubscriberClient) obj;
+		if (host == null) {
+			if (other.host != null)
+				return false;
+		}
+		else if (!host.equals(other.host))
+			return false;
+		if (port != other.port)
+			return false;
+		if (username == null) {
+			if (other.username != null)
+				return false;
+		}
+		else if (!username.equals(other.username))
+			return false;
+		return true;
 	}
 	
 	/**
@@ -78,6 +127,7 @@ public class SubscriberClient {
 			while (!Thread.currentThread().isInterrupted()) {
 				try {
 					if ((available = inStream.available()) > 0) {
+						LOGGER.trace("Received input (bytes available: {})", available);
 						//read the input into a string
 						byte[] buffer = new byte[available];
 						inStream.read(buffer);
@@ -102,7 +152,6 @@ public class SubscriberClient {
 		}, "notification_listener_thread");
 		
 		//start the listener thread
-		notificationListenerThread.setDaemon(true);
 		notificationListenerThread.start();
 	}
 	
@@ -117,6 +166,8 @@ public class SubscriberClient {
 			String wholeMessage = sb.toString();
 			String message = wholeMessage.substring(0, messageEnd);
 			String rest = wholeMessage.substring(messageEnd + MESSAGE_END.length());
+			
+			LOGGER.debug("received message: {}", message);
 			
 			//handle the message content
 			handleMessage(message);
@@ -133,22 +184,24 @@ public class SubscriberClient {
 	 * Handle the message
 	 */
 	private void handleMessage(String message) {
+		LOGGER.debug("handling message: {}", message);
 		if (message.equals(USERNAME_REQUEST)) {
 			//notification service requests a name for this user -> send the name
 			try {
+				LOGGER.debug("received name request. answering with username: {}", username);
 				outStream.write(username.getBytes());
 				outStream.flush();
 			}
 			catch (IOException ioe) {
 				ioe.printStackTrace();
 				//if the name can't be send the program can't go on
-				System.err.println("FATAL: failed to send username to service. ending programm");
+				LOGGER.fatal("failed to send username to service. ending programm");
 				System.exit(1);
 			}
 		}
 		else {
+			LOGGER.debug("received notification message from service: {}", message);
 			//do whatever you want with the message
-			System.out.println(message);
 		}
 	}
 	
@@ -173,7 +226,7 @@ public class SubscriberClient {
 		}
 		
 		host = configProperties.getProperty("host", "localhost");
-		username = configProperties.getProperty("user", "user");
+		username = configProperties.getProperty("username", "user");
 		String portValue = null;
 		try {
 			portValue = configProperties.getProperty("port", "<<not_found>>");
