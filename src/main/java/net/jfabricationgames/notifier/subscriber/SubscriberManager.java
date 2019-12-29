@@ -3,6 +3,7 @@ package net.jfabricationgames.notifier.subscriber;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,10 +60,22 @@ public class SubscriberManager {
 		LOGGER.debug("sending notification: {}", notification);
 		
 		//copy the list of subscribers to prevent concurrent modifications
-		List<Subscriber> currentSubscribers = new ArrayList<Subscriber>(subscribers);
+		List<Subscriber> currentSubscribers = new ArrayList<Subscriber>(getSubscribers());
+		
 		//send the notification message to all subscribers
-		currentSubscribers.stream().filter(s -> notification.getReceivers().contains(s.getName()))
+		currentSubscribers.stream().filter(s -> matchesAnyUsernameRegex(notification.getReceivers(), s.getName()))
 				.forEach(s -> sendNotificationToSubscriber(s, notification));
+	}
+	
+	protected static boolean matchesAnyUsernameRegex(List<String> receiverRegex, String testedName) {
+		boolean matches = false;
+		for (String receiver : receiverRegex) {
+			matches |= matchesUsernameRegex(receiver, testedName);
+		}
+		return matches;
+	}
+	protected static boolean matchesUsernameRegex(String usernameRegex, String testedName) {
+		return Pattern.matches(usernameRegex, testedName);
 	}
 	
 	private void sendNotificationToSubscriber(Subscriber subscriber, Notification notification) {
@@ -94,5 +107,9 @@ public class SubscriberManager {
 	public void removeSubscriber(Subscriber subscriber) {
 		LOGGER.debug("removing subscriber: {}", subscriber);
 		subscribers.remove(subscriber);
+	}
+	
+	protected List<Subscriber> getSubscribers() {
+		return subscribers;
 	}
 }
