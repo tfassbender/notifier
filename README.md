@@ -22,3 +22,7 @@ or when using HTTP POST:
     url_to_your_host:<used_port_from_the_config_files>/JFG_Notification/notification/notification/notify
     
 using a notification object in json form (see the [Notification implementation](https://github.com/tfassbender/notifier/blob/master/src/main/java/net/jfabricationgames/notifier/notification/Notification.java)).
+
+### Sending broadcasts using regular expressions
+
+To send broadcasts to users one can use regular expressions. To broadcast to every user that suscribed to the notifier the username `".*"` can be used. Or to access every user of a certain project you can use `"the_projects_name\.*"` (where all users of the project must have a name, starting with `the_projects_name`).
