@@ -51,6 +51,10 @@ public class SubscriberClient {
 	 * The output stream to send to the notification
 	 */
 	private OutputStream outStream;
+	/**
+	 * The thread that listens to notifications
+	 */
+	private Thread notificationListenerThread;
 	
 	/**
 	 * Main method for testing
@@ -121,7 +125,10 @@ public class SubscriberClient {
 	 * Create an start a notification listener to handle messages from the service.
 	 */
 	private void startNotificationListener() {
-		Thread notificationListenerThread = new Thread(() -> {
+		if (notificationListenerThread != null && notificationListenerThread.isAlive()) {
+			throw new IllegalStateException("A notification listener thread has already been started");
+		}
+		notificationListenerThread = new Thread(() -> {
 			int available = 0;
 			StringBuilder sb = new StringBuilder();
 			while (!Thread.currentThread().isInterrupted()) {
@@ -153,6 +160,20 @@ public class SubscriberClient {
 		
 		//start the listener thread
 		notificationListenerThread.start();
+	}
+	
+	/**
+	 * Stop this subscriber and close the connection.
+	 */
+	public void closeConnection() throws IOException {
+		if (notificationListenerThread != null) {
+			notificationListenerThread.interrupt();
+			socket.close();
+			notificationListenerThread = null;
+		}
+		else {
+			throw new IllegalStateException("The notification listener thread has either not yet been started or was already closed");
+		}
 	}
 	
 	/**
