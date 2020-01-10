@@ -88,7 +88,7 @@ public class SubscriberReceiver {
 		
 		String portValue = null;
 		try {
-			portValue = configProperties.getProperty("port", "<<not_found>>");
+			portValue = configProperties.getProperty("port.socket", "<<not_found>>");
 			port = Integer.parseInt(portValue);
 		}
 		catch (NumberFormatException nfe) {

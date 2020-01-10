@@ -31,9 +31,13 @@ public class SubscriberClient {
 	 */
 	private String host;
 	/**
-	 * The port to contact for the notification service.
+	 * The port to send the notifications (via REST).
 	 */
-	private int port;
+	private int portRest;
+	/**
+	 * The port to connect to (via socket).
+	 */
+	private int portSocket;
 	/**
 	 * The name, this client will use when subscribing to the notification service
 	 */
@@ -73,7 +77,7 @@ public class SubscriberClient {
 	 */
 	public SubscriberClient() throws IOException {
 		loadConfig();
-		LOGGER.info("SubscriberClient: loaded configuration: [host: {}   port: {}   username: {}]", host, port, username);
+		LOGGER.info("SubscriberClient: loaded configuration: [host: {}   port: {}   username: {}]", host, portRest, username);
 		
 		subscribeToNotifierService();
 		startNotificationListener();
@@ -81,8 +85,8 @@ public class SubscriberClient {
 	
 	@Override
 	public String toString() {
-		return "SubscriberClient [host=" + host + ", port=" + port + ", username=" + username + ", socket=" + socket + ", inStream=" + inStream
-				+ ", outStream=" + outStream + "]";
+		return "SubscriberClient [host=" + host + ", portRest=" + portRest + ", portSocket=" + portSocket + ", username=" + username + ", socket="
+				+ socket + ", inStream=" + inStream + ", outStream=" + outStream + "]";
 	}
 	
 	@Override
@@ -90,7 +94,8 @@ public class SubscriberClient {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((host == null) ? 0 : host.hashCode());
-		result = prime * result + port;
+		result = prime * result + portRest;
+		result = prime * result + portSocket;
 		result = prime * result + ((username == null) ? 0 : username.hashCode());
 		return result;
 	}
@@ -110,7 +115,9 @@ public class SubscriberClient {
 		}
 		else if (!host.equals(other.host))
 			return false;
-		if (port != other.port)
+		if (portRest != other.portRest)
+			return false;
+		if (portSocket != other.portSocket)
 			return false;
 		if (username == null) {
 			if (other.username != null)
@@ -230,7 +237,7 @@ public class SubscriberClient {
 	 * Open the connection to subscribe to the notification service
 	 */
 	private void subscribeToNotifierService() throws UnknownHostException, IOException {
-		socket = new Socket(host, port);
+		socket = new Socket(host, portSocket);
 		inStream = socket.getInputStream();
 		outStream = socket.getOutputStream();
 	}
@@ -249,14 +256,17 @@ public class SubscriberClient {
 		host = configProperties.getProperty("host", "localhost");
 		username = configProperties.getProperty("username", "user");
 		String portValue = null;
+		String portValueSocket = null;
 		try {
-			portValue = configProperties.getProperty("port", "<<not_found>>");
-			port = Integer.parseInt(portValue);
+			portValue = configProperties.getProperty("port.rest", "<<not_found>>");
+			portValueSocket = configProperties.getProperty("port.socket", "<<not_found>>");
+			portRest = Integer.parseInt(portValue);
+			portSocket = Integer.parseInt(portValueSocket);
 		}
 		catch (NumberFormatException nfe) {
 			throw new IOException("port couldn't be interpreted as integer value (was: " + portValue + ")", nfe);
 		}
-		if (port < 1024) {
+		if (portRest < 1024) {
 			throw new IOException("the port can't be a \"well known port\" (port number < 1024)");
 		}
 		if (host.equals("")) {

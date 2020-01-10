@@ -1,6 +1,6 @@
 #create port and password enviroment variables
-export TOMCAT_EXTERNAL_PORT=5713
-export NOTIFIER_PORT=5714
+export NOTIFIER_PORT_REST=5714
+export NOTIFIER_PORT_SOCKET=5716
 
 #make the logs reachable for everyone (because they are created by root, which can cause problems)
 sudo chmod 777 logs/*
@@ -15,8 +15,8 @@ docker-compose up &
 #start the service by requesting anything (otherwhise the socket connection can not be established)
 #wait 20 seconds before the request to give the docker time to start
 sleep 20
-curl localhost:${TOMCAT_EXTERNAL_PORT}/JFG_Notifier/notifier/notifier/hello 
+curl localhost:${NOTIFIER_PORT_REST}/JFG_Notifier/notifier/notifier/hello 
 
 #unset the variables
-unset TOMCAT_EXTERNAL_PORT
-unset NOTIFIER_PORT
+unset NOTIFIER_PORT_REST
+unset NOTIFIER_PORT_SOCKET
