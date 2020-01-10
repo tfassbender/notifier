@@ -85,8 +85,8 @@ public class SubscriberClient {
 	
 	@Override
 	public String toString() {
-		return "SubscriberClient [host=" + host + ", port=" + portRest + ", username=" + username + ", socket=" + socket + ", inStream=" + inStream
-				+ ", outStream=" + outStream + "]";
+		return "SubscriberClient [host=" + host + ", portRest=" + portRest + ", portSocket=" + portSocket + ", username=" + username + ", socket="
+				+ socket + ", inStream=" + inStream + ", outStream=" + outStream + "]";
 	}
 	
 	@Override
@@ -95,6 +95,7 @@ public class SubscriberClient {
 		int result = 1;
 		result = prime * result + ((host == null) ? 0 : host.hashCode());
 		result = prime * result + portRest;
+		result = prime * result + portSocket;
 		result = prime * result + ((username == null) ? 0 : username.hashCode());
 		return result;
 	}
@@ -115,6 +116,8 @@ public class SubscriberClient {
 		else if (!host.equals(other.host))
 			return false;
 		if (portRest != other.portRest)
+			return false;
+		if (portSocket != other.portSocket)
 			return false;
 		if (username == null) {
 			if (other.username != null)

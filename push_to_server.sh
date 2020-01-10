@@ -1,0 +1,1 @@
+scp -r docker/* target/JFG_Notifier.war src/main/resources/notifier_config.properties pi@192.168.178.98:/home/pi/jfg_notifier/

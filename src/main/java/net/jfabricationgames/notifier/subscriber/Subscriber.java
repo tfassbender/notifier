@@ -131,7 +131,7 @@ public class Subscriber {
 	public void sendMessageToSubscriber(String message) throws IOException {
 		boolean connected = isConnected();
 		boolean removeSubscriber = false;
-		LOGGER.debug("sending message to subscriber (message: {}{}   subscriber: {}   connected: {})", message, MESSAGE_END, this, connected);
+		LOGGER.debug("sending message to subscriber (message: {}{}   connected: {})", message, MESSAGE_END, connected);
 		
 		if (connected) {
 			try {
@@ -152,7 +152,7 @@ public class Subscriber {
 		}
 		
 		if (removeSubscriber) {
-			LOGGER.info("removing subscriber: {}", this);
+			LOGGER.info("removing this subscriber");
 			receiver.removeSubscriber(this);
 		}
 	}
@@ -164,7 +164,7 @@ public class Subscriber {
 		return socket.isClosed();
 	}
 	public void closeConnection() throws IOException {
-		LOGGER.debug("closing connection of subscriber {}", this);
+		LOGGER.debug("closing connection of this subscriber");
 		socket.close();
 	}
 	
