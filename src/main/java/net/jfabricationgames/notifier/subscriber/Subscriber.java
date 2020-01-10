@@ -34,7 +34,7 @@ public class Subscriber {
 		//send a name request and receive result (afterwards register this subscriber to the manager)
 		sendNameRequest();
 		
-		LOGGER.info(">> Subscriber started {}", this);
+		LOGGER.info(">> Subscriber started");
 	}
 	
 	@Override
